@@ -1,0 +1,21 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div>
+    <h2>Active Listings</h2>
+</div>
+{% for object in object_list %}
+        <article class="media content-section">
+          <img class="rounded-circle article-img" src="{{ object.img_url }}">
+          <div class="media-body">
+            <div class="article-metadata">
+              <a class="mr-2" href="#">{{ object.user.username }}</a>
+              <small class="text-muted">{{ object.category }}</small>
+            </div>
+            <h4 class="article-title" href="#">{{ object.title }}</h4>
+            <p class="article-content">{{ object.description }}</p>
+          </div>
+        </article>
+
+{% endfor %}
+{% endblock %}

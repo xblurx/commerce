@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.urls import reverse
 
 
 class User(AbstractUser):
@@ -28,4 +29,3 @@ class Bid(models.Model):
 class Comment(models.Model):
     """Comments made on auction listings"""
     pass
-

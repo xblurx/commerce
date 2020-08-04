@@ -1,14 +1,22 @@
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, CreateView
 from django.urls import reverse
 
-from .models import User
+from .models import User, Listing
+from .forms import CreateListingForm
 
 
-def index(request):
-    return render(request, "auctions/index.html")
+# def index(request):
+#     return render(request, "auctions/index.html")
+
+
+class ListingAllView(ListView):
+    """Index"""
+    model = Listing
 
 
 def login_view(request):
@@ -22,7 +30,8 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
-            return HttpResponseRedirect(reverse("index"))
+            # return HttpResponseRedirect(reverse("index"))
+            return redirect(reverse("index"))
         else:
             return render(request, "auctions/login.html", {
                 "message": "Invalid username and/or password."
@@ -33,7 +42,8 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return HttpResponseRedirect(reverse("index"))
+    # return HttpResponseRedirect(reverse("index"))
+    return redirect(reverse("index"))
 
 
 def register(request):
@@ -63,10 +73,13 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
-def create_listing(request):
-    if request.method == "POST":
-        title = request.POST["title"]
-        description = request.POST["description"]
-        starting_bid = int(request.POST["starting_bid"])
-        img_url = request.POST["img_url"]
-        category = request.POST["category"]
+class ListingCreateView(CreateView):
+    """Handle new listings creation"""
+    model = Listing
+    fields = ['title', 'description', 'starting_bid', 'img_url', 'category']
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+
