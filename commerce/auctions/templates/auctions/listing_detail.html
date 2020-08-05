@@ -1,0 +1,43 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div>
+    <h2>Listing: {{object.title}}</h2>
+</div>
+<!--    <article class="media content-section">-->
+<!--          <img class="rounded-circle article-img" src="{{ object.img_url }}">-->
+<!--          <div class="media-body">-->
+<!--            <div class="article-metadata">-->
+<!--                <a class="mr-2" href="#">{{ object.user.username }}</a>-->
+<!--                <small class="text-muted">{{ object.category }}</small>-->
+<!--            </div>-->
+<!--            <h4 class="article-title">{{ object.title }}</h4>-->
+<!--            <p class="article-content">{{ object.description }}</p>-->
+<!--          </div>-->
+<!--        </article>-->
+    <div class="container" style="padding-left: 0;">
+        <div class="content-section" style="border: 0px">
+            <img src="{{ object.img_url }}">
+        </div>
+        <div>
+            <h2 style="font-weight: bold;">${{ object.starting_bid }}.00</h2>
+        </div>
+        <div>
+<!--            form to update bid-->
+        </div>
+        <div>
+            <h5>Description</h5>
+            <p class="article-content">{{ object.description }}</p>
+        </div>
+        <div>
+            <h5>Details</h5>
+            <ul>
+                <li>Listed by: {{ object.user.username }}</li>
+                <li>Category: {{ object.category }}</li>
+            </ul>
+        </div>
+
+
+
+    </div>
+{% endblock %}

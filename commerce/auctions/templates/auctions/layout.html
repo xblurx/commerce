@@ -19,7 +19,6 @@
               </button>
               <div class="collapse navbar-collapse" id="navbarToggle">
                 <div class="navbar-nav mr-auto">
-                  <a class="nav-item nav-link" href="/">Home</a>
                   <a class="nav-item nav-link" href="/about">About</a>
                 </div>
                 <div class="navbar-nav">
@@ -36,29 +35,38 @@
         </header>
 
         <main role="main" class="container">
-          <div class="row">
-            <div class="col-md-8">
-              {% block body %}{% endblock %}
-            </div>
-            <div class="col-md-4">
-                <div class="content-section">
-                    <h3>Auctions</h3>
-                    {% if user.is_authenticated %}
-                        <p class="text-muted">Signed in as <strong>{{ user.username }}</strong></p>
-                    {% else %}
-                        <p class="text-muted">Not signed in.<p>
-                    {% endif %}
-                    <ul class="list-group">
-                        <li class="list-group-item list-group-item-light">
-                            <a href="{% url 'index' %}">Active Listings</a>
-                        </li>
-                    {% if user.is_authenticated %}
-                    <li class="list-group-item list-group-item-light">
-                        <a href="{% url 'new_listing' %}">Create listing</a>
-                    </li>
-                    {% endif %}
-                  </ul>
+            <div class="row">
+                <div class="col-md-8">
+                    {% block body %}{% endblock %}
                 </div>
+                <div class="col-md-4">
+                    <div class="content-section">
+                        <h3>Auctions</h3>
+                        {% if user.is_authenticated %}
+                        <p class="text-muted">Signed in as <strong>{{ user.username }}</strong></p>
+                        {% else %}
+                        <p class="text-muted">Not signed in.<p>
+                        {% endif %}
+                        <ul class="list-group">
+                            <li class="list-group-item list-group-item-light">
+                                <a href="{% url 'index' %}">Active Listings</a>
+                            </li>
+                            {% if user.is_authenticated %}
+                            <li class="list-group-item list-group-item-light">
+                                <a href="{% url 'new_listing' %}">Create listing</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                <div class="main col-lg-10 col-md-9">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
             </div>
           </div>
         </main>

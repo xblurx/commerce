@@ -4,6 +4,8 @@ from django.urls import reverse
 
 
 class User(AbstractUser):
+    watchlist = models.CharField
+
     def __str__(self):
         return f'{self.username} ({self.email})'
 
@@ -20,10 +22,15 @@ class Listing(models.Model):
     def __str__(self):
         return f'{self.title} starts with {self.starting_bid}(category{self.category})'
 
+    def get_absolute_url(self):
+        print('loading... get_absolute_url')
+        return reverse('listing_detail', kwargs={'pk': self.pk})
+
 
 class Bid(models.Model):
     """ Bids made on auction listings"""
-    pass
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="listing_bids")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_owner")
 
 
 class Comment(models.Model):

@@ -1,17 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
-from django.views.generic import ListView, CreateView
+from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse
 
 from .models import User, Listing
-from .forms import CreateListingForm
-
-
-# def index(request):
-#     return render(request, "auctions/index.html")
 
 
 class ListingAllView(ListView):
@@ -73,13 +70,21 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
-class ListingCreateView(CreateView):
+class ListingCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     """Handle new listings creation"""
     model = Listing
     fields = ['title', 'description', 'starting_bid', 'img_url', 'category']
+    success_message = 'Listing was created successfully'
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
 
+
+class ListingDetailView(DetailView):
+    model = Listing
+
+
+class ListingUpdateView(UpdateView):
+    pass
 
