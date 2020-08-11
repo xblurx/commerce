@@ -14,11 +14,19 @@
             <p class="article-content">{{ object.description }}</p>
         </div>
         <br>
+        {% if bids_number == 0 %}
         <div>
             <h3 style="font-weight: bold;">${{ object.starting_bid }}.00</h3>
         </div>
+        {% else %}
+        <div>
+            <h3 style="font-weight: bold;">${{ bid_amount }}.00</h3>
+        </div>
+        {% endif %}
+        {% if user.is_authenticated %}
         <div>
             <form action="{% url 'listing_detail' object.pk %}" method='post'>
+                <label class="text-muted">{{ object.bids_number }} bid(s) so far.</label>
                 {% csrf_token %}
                 {{ form|crispy }}
                 <div class="form-group mt-4">
@@ -26,6 +34,7 @@
                 </div>
             </form>
         </div>
+        {% endif %}
         <div>
             <h5>Details</h5>
             <ul>
@@ -36,7 +45,7 @@
                     <li>Category: No category listed</li>
                 {% endif %}
                 {% if object.date_listed %}
-                     <li>Created: {{ object.date_listed }} </li>
+                     <li>Created: {{ object.date_listed|date:"d F Y H:i" }} </li>
                 {% endif %}
             </ul>
         </div>

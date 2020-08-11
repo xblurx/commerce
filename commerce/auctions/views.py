@@ -3,7 +3,9 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
+from django.db.models import F
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect
 from django.views import View
@@ -17,7 +19,7 @@ from .forms import CreateBidForm
 
 
 class ListingAllView(ListView):
-    """Index"""
+    """Index page"""
     model = Listing
 
 
@@ -87,78 +89,69 @@ class ListingCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
 
 
 class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
+    """
+    Handles listing view by get request
+    Handles Bid processing & validation on post request
+    """
     model = Listing
     form_class = CreateBidForm
     initial = {'bid_amount': 'Bid'}
-    success_url = 'auctions/listing_detail'
-    success_message = 'Your bid was placed successfully'
 
     def get_success_url(self):
         return reverse('listing_detail', kwargs={'pk': self.object.pk})
 
+    def get_context_data(self, **kwargs):
+        context = super(ListingDetail, self).get_context_data(**kwargs)
+        context['form'] = CreateBidForm()
+        try:
+            context['bid_amount'] = Bid.objects.filter(listing=self.object.pk)[0].bid_amount
+        except IndexError:
+            context['bid_amount'] = 0
+        return context
+
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return HttpResponseForbidden()
-
         self.object = self.get_object()
         form = self.get_form()
-
         if form.is_valid():
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super(ListingDetail, self).get_context_data(**kwargs)
-        context['bid'] = Bid.objects.filter(listing=self.object).order_by('bid_amount')
-        context['form'] = CreateBidForm()
-        return context
-
     def form_valid(self, form):
-        # starting_bid = Listing.objects.get(id=self.pk).starting_bid
-        # number_of_bids = Listing.objects.get(id=self.pk).bids_number
-        form.instance.listing = self.object
-        form.instance.user = self.request.user
+        """
+        In this method, form is being validated against:
+        1) whether bid user trying to place is greater than an existing one
+        2) whether user that is trying to place a bid is the listing owner
+        3) whether user already has bids on this listing, then trying to update his existing bid
+        if form was validated, new bid is being created
+        """
+        instance = form.save(commit=False)
+        starting_bid = self.object.starting_bid
+
+        if instance.bid_amount <= starting_bid:
+            messages.error(self.request, 'Bid amount must be greater than starting bid')
+            return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
+        elif self.request.user == self.object.user:
+            messages.error(self.request, 'Owner cannot place bids')
+            return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
+        elif self.object.bids_number > 0:
+            try:
+                existing_bid = Bid.objects.get(listing=self.object.pk, user=self.request.user)
+                if existing_bid.bid_amount > instance.bid_amount:
+                    messages.error(self.request, 'The bid you are trying to place is lower than existing one')
+                    return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
+                existing_bid.bid_amount = instance.bid_amount
+                existing_bid.save()
+                messages.success(self.request, 'Your bid was updated')
+                return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
+            except ObjectDoesNotExist:
+                pass
+
+        Listing.objects.filter(id=self.object.pk).update(bids_number=F('bids_number') + 1)
+        instance.listing = self.object
+        instance.user = self.request.user
         form.save()
+        messages.success(self.request, 'Bid was registered successfully')
         return redirect(self.get_success_url())
-
-
-
-"""
-Another (alternative better solution) for ListingView to handle get and post
-"""
-
-# class ListingDisplay(DetailView):
-#     model = Listing
-#
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context['form'] = CreateBidForm()
-#         return context
-#
-#
-# class ListingInterest(SingleObjectMixin, FormView):
-#     template_name = 'auctions/listing_detail.html'
-#     form_class = CreateBidForm
-#     model = Bid
-#     success_message = 'Your bid was placed successfully'
-#
-#     def post(self, request, *args, **kwargs):
-#         if not request.user.is_authenticated:
-#             return HttpResponseForbidden()
-#         self.object = self.get_object()
-#         return super().post(request, *args, **kwargs)
-#
-#     def get_success_url(self):
-#         return reverse('listing-detail', kwargs={'pk': self.object.pk})
-#
-#
-# class ListingDetail(View):
-#
-#     def get(self, request, *args, **kwargs):
-#         view = ListingDisplay.as_view()
-#         return view(request, *args, **kwargs)
-#
-#     def post(self, request, *args, **kwargs):
-#         view = ListingInterest.as_view()
-#         return view(request, *args, **kwargs)

@@ -88,3 +88,9 @@ a.article-title:hover {
 .account-heading {
   font-size: 2.5rem;
 }
+
+.text-muted-bid {
+    font-size: smaller;
+    font-weight: lighter;
+
+}

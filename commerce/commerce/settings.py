@@ -115,9 +115,9 @@ TIME_ZONE = 'UTC'
 
 DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
 
-USE_I18N = True
+USE_I18N = False
 
-USE_L10N = False
+USE_L10N = True
 
 USE_TZ = True
 

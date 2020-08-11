@@ -58,12 +58,18 @@
                             {% endif %}
                         </ul>
                     </div>
-                <div class="main col-lg-10 col-md-9">
+                <div class="list-group">
                 {% if messages %}
                     {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                    <div class="alert alert-danger">
+                        {{ message }}
+                    </div>
+                    {% else %}
                     <div class="alert alert-{{ message.tags }}">
                         {{ message }}
                     </div>
+                    {% endif %}
                     {% endfor %}
                 {% endif %}
             </div>
