@@ -1,0 +1,21 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<div>
+    <h2>Watchlist</h2>
+</div>
+
+{% for object in object_list %}
+        <article class="media content-section">
+            <img class="rounded-circle article-img" src="{{ object.listing.img_url }}">
+            <div class="media-body">
+                <div class="article-metadata">
+                    <a class="mr-2" href="#">Listed by: {{ object.listing.user }}</a>
+                    <small class="text-muted">{{ object.listing.category }}</small>
+                </div>
+                <h4><a class="article-title" href="{% url 'listing_detail' object.id %}">{{ object.listing.title }}</a></h4>
+                <p class="article-content">{{ object.listing.description }}</p>
+            </div>
+        </article>
+{% endfor %}
+{% endblock %}

@@ -13,6 +13,7 @@ class User(AbstractUser):
 class Listing(models.Model):
     """Auction listing"""
     user = models.ForeignKey(User, verbose_name='user owner', on_delete=models.CASCADE, related_name="usr_listings")
+    winner = models.ForeignKey(User, verbose_name='listing_winner', blank=True, null=True, on_delete=models.CASCADE, related_name='winner')
     title = models.CharField(max_length=64)
     description = models.TextField(max_length=160)
     starting_bid = models.PositiveIntegerField()
@@ -20,6 +21,7 @@ class Listing(models.Model):
     img_url = models.URLField("Image URL", max_length=200, blank=True)
     category = models.CharField(max_length=64, blank=True)
     date_listed = models.DateTimeField(default=timezone.now)
+    closed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'auction listing'
@@ -46,10 +48,25 @@ class Bid(models.Model):
     def __str__(self):
         return f'{self.bid_amount} by {self.user} on {self.listing}'
 
-    def clean(self):
-        pass
-
 
 class Comment(models.Model):
     """Comments made on auction listing"""
-    pass
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_comments')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='listing_comments')
+    text = models.TextField(max_length=160)
+    date_posted = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-date_posted']
+
+
+class Watchlist(models.Model):
+    """Items on user's watchlist"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_wanted")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="watchlist_items")
+
+    class Meta:
+        verbose_name = 'watchlist'
+
+    def __str__(self):
+        return f'{self.user}, {self.listing}'

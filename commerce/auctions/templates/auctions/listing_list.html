@@ -6,15 +6,15 @@
 </div>
 {% for object in object_list %}
         <article class="media content-section">
-          <img class="rounded-circle article-img" src="{{ object.img_url }}">
-          <div class="media-body">
-            <div class="article-metadata">
-                <a class="mr-2" href="#">{{ object.user.username }}</a>
-                <small class="text-muted">{{ object.category }}</small>
+            <img class="rounded-circle article-img" src="{{ object.img_url }}">
+            <div class="media-body">
+                <div class="article-metadata">
+                    <a class="mr-2" href="#">{{ object.user.username }}</a>
+                    <small class="text-muted">{{ object.category }}</small>
+                </div>
+                <h4><a class="article-title" href="{% url 'listing_detail' object.id %}">{{ object.title }}</a></h4>
+                <p class="article-content">{{ object.description }}</p>
             </div>
-            <h4><a class="article-title" href="{% url 'listing_detail' object.id %}">{{ object.title }}</a></h4>
-            <p class="article-content">{{ object.description }}</p>
-          </div>
         </article>
 {% endfor %}
 {% endblock %}

@@ -6,6 +6,11 @@
     <h2>Listing: {{object.title}}</h2>
 </div>
     <div class="container" style="padding-left: 0;">
+        {% if object.watchlist %}
+        <div>
+            <span class="badge badge-info">Watchlist</span>
+        </div>
+        {% endif %}
         <div>
             <img src="{{ object.img_url }}">
         </div>
@@ -14,7 +19,7 @@
             <p class="article-content">{{ object.description }}</p>
         </div>
         <br>
-        {% if bids_number == 0 %}
+        {% if object.bids_number == 0 %}
         <div>
             <h3 style="font-weight: bold;">${{ object.starting_bid }}.00</h3>
         </div>
@@ -28,9 +33,32 @@
             <form action="{% url 'listing_detail' object.pk %}" method='post'>
                 <label class="text-muted">{{ object.bids_number }} bid(s) so far.</label>
                 {% csrf_token %}
-                {{ form|crispy }}
+                {{ bid_form|crispy }}
+                {% if form.errors %}
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <div class="alert alert-danger">
+                                <strong>{{ error|escape }}</strong>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <strong>{{ error|escape }}</strong>
+                        </div>
+                    {% endfor %}
+                {% endif %}
                 <div class="form-group mt-4">
-                    <button class="btn btn-outline-info" type="submit">Place bid</button>
+                    <button class="btn btn-outline-primary" name="bid_form" type="submit">Place bid</button>
+                </div>
+            </form>
+        </div>
+        <div>
+            <form action="{% url 'listing_detail' object.pk %}" method='post'>
+                {% csrf_token %}
+                {{ watchlist_form|crispy }}
+                <div class="form-group mt-4">
+                    <button class="btn btn-outline-info" name="watchlist_form" type="submit">Add to watchlist</button>
                 </div>
             </form>
         </div>
@@ -48,6 +76,30 @@
                      <li>Created: {{ object.date_listed|date:"d F Y H:i" }} </li>
                 {% endif %}
             </ul>
+        </div>
+        <hr>
+        <div>
+            <form action="{% url 'listing_detail' object.pk %}" method='post'>
+                {% csrf_token %}
+                {{ comment_form|crispy }}
+                <div class="form-group mt-4">
+                    <button class="btn btn-outline-info" name="comment_form" type="submit">Submit</button>
+                </div>
+            </form>
+        </div>
+        <hr>
+        <div>
+            {% for comment in comments %}
+            <div class="media content-section">
+                <div class="media-body">
+                    <div class="article-metadata">
+                        <a class="mr-2" href="#">{{ comment.date_posted }}</a>
+                    </div>
+                    <h5><a class="article-title" href="{% url 'listing_detail' object.id %}">{{ comment.user }}</a></h5>
+                    <p class="article-content">{{ comment.text }}</p>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}

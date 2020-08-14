@@ -1,21 +1,17 @@
-from django import forms
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import F
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect
-from django.views import View
-from django.views.generic import ListView, CreateView, DetailView, FormView
-from django.views.generic.detail import SingleObjectMixin
+from django.views.generic import ListView, CreateView, DetailView
 from django.views.generic.edit import FormMixin
 from django.urls import reverse
 
-from .models import User, Listing, Bid
-from .forms import CreateBidForm
+from .models import User, Listing, Bid, Watchlist, Comment
+from .forms import PlaceBidForm, AddToWatchlistForm, CommentForm
+from .form_validation import form_valid_bid, form_valid_watchlist, form_valid_comment
 
 
 class ListingAllView(ListView):
@@ -94,15 +90,33 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
     Handles Bid processing & validation on post request
     """
     model = Listing
-    form_class = CreateBidForm
-    initial = {'bid_amount': 'Bid'}
+    form_class = PlaceBidForm
+    form_class_2 = AddToWatchlistForm
+    form_class_3 = CommentForm
+
+    # initial = {'bid_amount': 'Bid'}
 
     def get_success_url(self):
         return reverse('listing_detail', kwargs={'pk': self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super(ListingDetail, self).get_context_data(**kwargs)
-        context['form'] = CreateBidForm()
+        # print(f'context: {context}\n')
+        context['bid_form'] = PlaceBidForm()
+        context['watchlist_form'] = AddToWatchlistForm(initial={
+            'user': self.request.user,
+            'listing': self.object
+        })
+        context['comment_form'] = CommentForm(initial={
+            'user': self.request.user,
+            'listing': self.object
+        })
+        try:
+            context['comments'] = Comment.objects.all()
+        except:
+            print('error')
+            pass
+
         try:
             context['bid_amount'] = Bid.objects.filter(listing=self.object.pk)[0].bid_amount
         except IndexError:
@@ -110,48 +124,35 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
         return context
 
     def post(self, request, *args, **kwargs):
+        print(f'\nrequest.POST: {request.POST}\n\n')
         if not request.user.is_authenticated:
             return HttpResponseForbidden()
         self.object = self.get_object()
-        form = self.get_form()
+
+        if 'bid_form' in request.POST:
+            form_class = self.get_form_class()
+        elif 'watchlist_form' in request.POST:
+            form_class = self.form_class_2
+        else:
+            form_class = self.form_class_3
+
+        form = self.get_form(form_class)
         if form.is_valid():
+            print('\nForm is valid.\n')
             return self.form_valid(form)
         else:
+            print(f'Form is invalid. {form.errors}')
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        """
-        In this method, form is being validated against:
-        1) whether bid user trying to place is greater than an existing one
-        2) whether user that is trying to place a bid is the listing owner
-        3) whether user already has bids on this listing, then trying to update his existing bid
-        if form was validated, new bid is being created
-        """
-        instance = form.save(commit=False)
-        starting_bid = self.object.starting_bid
+        print(f'\n{form.cleaned_data}\n')
+        if 'bid_amount' in form.cleaned_data:
+            return form_valid_bid(self, form)
+        elif 'text' in form.cleaned_data:
+            return form_valid_comment(self, form)
+        else:
+            return form_valid_watchlist(self, form)
 
-        if instance.bid_amount <= starting_bid:
-            messages.error(self.request, 'Bid amount must be greater than starting bid')
-            return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
-        elif self.request.user == self.object.user:
-            messages.error(self.request, 'Owner cannot place bids')
-            return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
-        elif self.object.bids_number > 0:
-            try:
-                existing_bid = Bid.objects.get(listing=self.object.pk, user=self.request.user)
-                if existing_bid.bid_amount > instance.bid_amount:
-                    messages.error(self.request, 'The bid you are trying to place is lower than existing one')
-                    return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
-                existing_bid.bid_amount = instance.bid_amount
-                existing_bid.save()
-                messages.success(self.request, 'Your bid was updated')
-                return redirect(reverse('listing_detail', kwargs={'pk': self.object.pk}))
-            except ObjectDoesNotExist:
-                pass
 
-        Listing.objects.filter(id=self.object.pk).update(bids_number=F('bids_number') + 1)
-        instance.listing = self.object
-        instance.user = self.request.user
-        form.save()
-        messages.success(self.request, 'Bid was registered successfully')
-        return redirect(self.get_success_url())
+class WatchlistView(ListView):
+    model = Watchlist

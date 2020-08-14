@@ -33,7 +33,6 @@
             </div>
           </nav>
         </header>
-
         <main role="main" class="container">
             <div class="row">
                 <div class="col-md-8">
@@ -54,6 +53,9 @@
                             {% if user.is_authenticated %}
                             <li class="list-group-item list-group-item-light">
                                 <a href="{% url 'new_listing' %}">Create listing</a>
+                            </li>
+                            <li class="list-group-item list-group-item-light">
+                                <a href="{% url 'watchlist' %}">Watchlist</a>
                             </li>
                             {% endif %}
                         </ul>
