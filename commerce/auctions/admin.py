@@ -10,7 +10,12 @@ class UsrAdmin(admin.ModelAdmin):
 
 class ListingAdmin(admin.ModelAdmin):
     readonly_fields = ('id',)
-    list_display = ('title', 'user', 'starting_bid', 'bids_number', 'category', 'date_listed')
+    list_display = (
+        'title', 'user',
+        'starting_bid', 'bids_number',
+        'category', 'date_listed',
+        'winner', 'closed'
+    )
 
 
 admin.site.register(User, UsrAdmin)

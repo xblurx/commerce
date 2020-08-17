@@ -56,3 +56,13 @@ class CommentForm(forms.ModelForm):
 
     def __str__(self):
         return f'{self.user} on {self.listing}'
+
+
+class CloseAuctionForm(forms.ModelForm):
+    class Meta:
+        model = Listing
+        fields = ('closed',)
+        widget = {'closed': forms.HiddenInput()}
+
+    def __str__(self):
+        return f'{self.title} is closed({self.closed})'

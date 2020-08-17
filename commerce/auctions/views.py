@@ -5,13 +5,14 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect
+from django.views.generic import View
 from django.views.generic import ListView, CreateView, DetailView
 from django.views.generic.edit import FormMixin
 from django.urls import reverse
 
 from .models import User, Listing, Bid, Watchlist, Comment
-from .forms import PlaceBidForm, AddToWatchlistForm, CommentForm
-from .form_validation import form_valid_bid, form_valid_watchlist, form_valid_comment
+from .forms import PlaceBidForm, AddToWatchlistForm, CommentForm, CloseAuctionForm
+from .form_validation import form_valid_bid, form_valid_watchlist, form_valid_comment, form_valid_closing
 
 
 class ListingAllView(ListView):
@@ -93,8 +94,7 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
     form_class = PlaceBidForm
     form_class_2 = AddToWatchlistForm
     form_class_3 = CommentForm
-
-    # initial = {'bid_amount': 'Bid'}
+    form_class_4 = CloseAuctionForm
 
     def get_success_url(self):
         return reverse('listing_detail', kwargs={'pk': self.object.pk})
@@ -107,14 +107,25 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
             'user': self.request.user,
             'listing': self.object
         })
+        context['close_auction'] = CloseAuctionForm(initial={
+            'closed': True
+        })
         context['comment_form'] = CommentForm(initial={
             'user': self.request.user,
             'listing': self.object
         })
         try:
-            context['comments'] = Comment.objects.all()
+            context['comments'] = Comment.objects.filter(listing=self.object)
         except:
-            print('error')
+            print('\nviews.py line 119 exception\n')
+            pass
+
+        try:
+            Watchlist.objects.get(
+                user=self.request.user,
+                listing=self.object)
+            context['watchlist'] = True
+        except:
             pass
 
         try:
@@ -133,6 +144,8 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
             form_class = self.get_form_class()
         elif 'watchlist_form' in request.POST:
             form_class = self.form_class_2
+        elif 'close_auction' in request.POST:
+            form_class = self.form_class_4
         else:
             form_class = self.form_class_3
 
@@ -145,14 +158,50 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        print(f'\n{form.cleaned_data}\n')
+        print(f'\ncleaned data: {form.cleaned_data}\n')
         if 'bid_amount' in form.cleaned_data:
             return form_valid_bid(self, form)
         elif 'text' in form.cleaned_data:
             return form_valid_comment(self, form)
+        elif 'closed' in form.cleaned_data:
+            return form_valid_closing(self, form)
         else:
             return form_valid_watchlist(self, form)
 
 
 class WatchlistView(ListView):
     model = Watchlist
+
+    def get_context_data(self, **kwargs):
+        context = super(WatchlistView, self).get_context_data(**kwargs)
+        context['object_list'] = Watchlist.objects.filter(user=self.request.user)
+        return context
+
+
+class CategoriesView(ListView):
+    """Shows all auction categories"""
+    model = Listing
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'GET':
+            return render(request, 'auctions/categories_list.html', context={
+                'object_list': [v for x in Listing.objects.order_by().values('category').distinct() for v in x.values()]
+            })
+
+    def get_context_data(self, **kwargs):
+        context = super(CategoriesView, self).get_context_data(**kwargs)
+        context['object_list'] = [v for x in Listing.objects.order_by().values('category').distinct() for v in x.values()]
+        return context
+
+
+class CategoryItemsView(ListView):
+    model = Listing
+    template_name = 'auctions/categories_items.html'
+
+    def get_context_data(self, **kwargs):
+        category = self.kwargs['category']
+        context = super(CategoryItemsView, self).get_context_data(**kwargs)
+        context['object_list'] = Listing.objects.filter(category=category)
+        context['category'] = category
+        return context
+

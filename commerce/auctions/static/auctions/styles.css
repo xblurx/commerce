@@ -93,3 +93,7 @@ a.article-title:hover {
     font-size: smaller;
     font-weight: lighter;
 }
+
+.category-items {
+    padding: 10px;
+}

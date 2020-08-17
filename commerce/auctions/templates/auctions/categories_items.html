@@ -1,24 +1,23 @@
 {% extends "auctions/layout.html" %}
 
-{% block title %}Listings{% endblock %}
+{% block title %}Items{% endblock %}
 
 {% block body %}
 <div>
-    <h2>Active Listings</h2>
+    <h2>{{ category }} items</h2>
 </div>
+<hr>
 {% for object in object_list %}
-{% if not object.closed == True %}
         <article class="media content-section">
             <img class="rounded-circle article-img" src="{{ object.img_url }}">
             <div class="media-body">
                 <div class="article-metadata">
-                    <a class="mr-2" href="#">{{ object.user.username }}</a>
+                    <a class="mr-2" href="#">Listed by: {{ object.user }}</a>
                     <small class="text-muted">{{ object.category }}</small>
                 </div>
                 <h4><a class="article-title" href="{% url 'listing_detail' object.id %}">{{ object.title }}</a></h4>
                 <p class="article-content">{{ object.description }}</p>
             </div>
         </article>
-{% endif %}
 {% endfor %}
 {% endblock %}

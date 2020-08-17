@@ -59,6 +59,9 @@ class Comment(models.Model):
     class Meta:
         ordering = ['-date_posted']
 
+    def __str__(self):
+        return f'by {self.user} on {self.listing}'
+
 
 class Watchlist(models.Model):
     """Items on user's watchlist"""

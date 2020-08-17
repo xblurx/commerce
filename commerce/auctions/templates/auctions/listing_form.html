@@ -3,9 +3,8 @@
 
 {% block title %}Create listing{% endblock %}
 
-
 {% block body %}
-<h1>Create new listing</h1>
+<h2>Create new listing</h2>
 <div class="content-section">
     {% if user.is_authenticated %}
     <form action="{% url 'new_listing' %}" method="post">

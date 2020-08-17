@@ -1,10 +1,18 @@
 {% extends "auctions/layout.html" %}
 {% load crispy_forms_tags %}
 
+{% block title %}Listing detail{% endblock %}
+
 {% block body %}
 <div>
     <h2>Listing: {{object.title}}</h2>
 </div>
+{% if object.closed == True %}
+<hr>
+<div>
+    <p>Listing is closed. Winner: {{object.winner}}</p>
+</div>
+{% else %}
     <div class="container" style="padding-left: 0;">
         {% if object.watchlist %}
         <div>
@@ -63,6 +71,17 @@
             </form>
         </div>
         {% endif %}
+        {% if user == object.user %}
+        <div>
+            <form action="{% url 'listing_detail' object.pk %}" method='post'>
+                {% csrf_token %}
+                {{ close_auction|crispy }}
+                <div class="form-group mt-4">
+                    <button class="btn btn-outline-info" name="close_auction" type="submit">Close</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
         <div>
             <h5>Details</h5>
             <ul>
@@ -102,4 +121,5 @@
             {% endfor %}
         </div>
     </div>
+{% endif %}
 {% endblock %}

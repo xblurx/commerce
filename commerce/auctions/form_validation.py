@@ -60,11 +60,21 @@ def form_valid_watchlist(self, form):
 
 def form_valid_comment(self, form):
     instance = form.save(commit=False)
-    # if len(Watchlist.objects.filter(listing=self.object, user=self.request.user)) != 0:
-    #     messages.info(self.request, 'Already in watchlist')
-    #     return redirect(self.get_success_url())
     instance.user = self.request.user
     instance.listing = self.object
     instance.save()
     messages.success(self.request, 'Comment posted!')
+    return redirect(self.get_success_url())
+
+
+def form_valid_closing(self, form):
+    try:
+        Listing.objects.filter(id=self.object.pk).update(
+            winner=Bid.objects.filter(listing=self.object).first().user,
+            closed=True
+        )
+    except AttributeError:
+        messages.error(self.request, 'Cannot close auction: 0 bids')
+        return redirect(self.get_success_url())
+    messages.success(self.request, 'Auction closed')
     return redirect(self.get_success_url())
