@@ -14,7 +14,7 @@
 </div>
 {% else %}
     <div class="container" style="padding-left: 0;">
-        {% if object.watchlist %}
+        {% if watchlist %}
         <div>
             <span class="badge badge-info">Watchlist</span>
         </div>
@@ -67,6 +67,7 @@
                 {{ watchlist_form|crispy }}
                 <div class="form-group mt-4">
                     <button class="btn btn-outline-info" name="watchlist_form" type="submit">Add to watchlist</button>
+                    <button class="btn btn-outline-secondary" name="watchlist_remove" type="submit">Remove</button>
                 </div>
             </form>
         </div>

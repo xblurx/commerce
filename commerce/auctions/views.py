@@ -1,22 +1,22 @@
-from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, redirect
-from django.views.generic import View
 from django.views.generic import ListView, CreateView, DetailView
 from django.views.generic.edit import FormMixin
 from django.urls import reverse
 
 from .models import User, Listing, Bid, Watchlist, Comment
 from .forms import PlaceBidForm, AddToWatchlistForm, CommentForm, CloseAuctionForm
-from .form_validation import form_valid_bid, form_valid_watchlist, form_valid_comment, form_valid_closing
+from .form_validation import form_valid_bid, form_valid_watchlist, form_valid_comment, form_valid_closing, \
+    remove_from_watchlist
 
 
 class ListingAllView(ListView):
-    """Index page"""
+    """Shows all active auction listings"""
     model = Listing
 
 
@@ -89,6 +89,8 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
     """
     Handles listing view by get request
     Handles Bid processing & validation on post request
+    Handles adding/removing watchlist items
+    Handles closing auction
     """
     model = Listing
     form_class = PlaceBidForm
@@ -101,7 +103,6 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ListingDetail, self).get_context_data(**kwargs)
-        # print(f'context: {context}\n')
         context['bid_form'] = PlaceBidForm()
         context['watchlist_form'] = AddToWatchlistForm(initial={
             'user': self.request.user,
@@ -114,18 +115,14 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
             'user': self.request.user,
             'listing': self.object
         })
-        try:
-            context['comments'] = Comment.objects.filter(listing=self.object)
-        except:
-            print('\nviews.py line 119 exception\n')
-            pass
+        context['comments'] = Comment.objects.filter(listing=self.object)
 
         try:
             Watchlist.objects.get(
                 user=self.request.user,
                 listing=self.object)
             context['watchlist'] = True
-        except:
+        except ObjectDoesNotExist:
             pass
 
         try:
@@ -135,7 +132,6 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
         return context
 
     def post(self, request, *args, **kwargs):
-        print(f'\nrequest.POST: {request.POST}\n\n')
         if not request.user.is_authenticated:
             return HttpResponseForbidden()
         self.object = self.get_object()
@@ -146,30 +142,29 @@ class ListingDetail(FormMixin, SuccessMessageMixin, DetailView):
             form_class = self.form_class_2
         elif 'close_auction' in request.POST:
             form_class = self.form_class_4
+        elif 'watchlist_remove' in request.POST:
+            return remove_from_watchlist(self)
         else:
             form_class = self.form_class_3
 
         form = self.get_form(form_class)
         if form.is_valid():
-            print('\nForm is valid.\n')
             return self.form_valid(form)
         else:
-            print(f'Form is invalid. {form.errors}')
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        print(f'\ncleaned data: {form.cleaned_data}\n')
         if 'bid_amount' in form.cleaned_data:
             return form_valid_bid(self, form)
         elif 'text' in form.cleaned_data:
             return form_valid_comment(self, form)
         elif 'closed' in form.cleaned_data:
             return form_valid_closing(self, form)
-        else:
-            return form_valid_watchlist(self, form)
+        return form_valid_watchlist(self, form)
 
 
 class WatchlistView(ListView):
+    """Shows items on user's watchlist"""
     model = Watchlist
 
     def get_context_data(self, **kwargs):
@@ -195,6 +190,7 @@ class CategoriesView(ListView):
 
 
 class CategoryItemsView(ListView):
+    """Shows selected category items"""
     model = Listing
     template_name = 'auctions/categories_items.html'
 

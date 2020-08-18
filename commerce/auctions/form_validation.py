@@ -47,6 +47,7 @@ def form_valid_bid(self, form):
 
 
 def form_valid_watchlist(self, form):
+    """Add item to watchlist, check whether items is already in"""
     instance = form.save(commit=False)
     if len(Watchlist.objects.filter(listing=self.object, user=self.request.user)) != 0:
         messages.info(self.request, 'Already in watchlist')
@@ -59,6 +60,7 @@ def form_valid_watchlist(self, form):
 
 
 def form_valid_comment(self, form):
+    """Comment validation"""
     instance = form.save(commit=False)
     instance.user = self.request.user
     instance.listing = self.object
@@ -68,6 +70,7 @@ def form_valid_comment(self, form):
 
 
 def form_valid_closing(self, form):
+    """Closing auction listing, updating closing status, determining the winner"""
     try:
         Listing.objects.filter(id=self.object.pk).update(
             winner=Bid.objects.filter(listing=self.object).first().user,
@@ -77,4 +80,18 @@ def form_valid_closing(self, form):
         messages.error(self.request, 'Cannot close auction: 0 bids')
         return redirect(self.get_success_url())
     messages.success(self.request, 'Auction closed')
+    return redirect(self.get_success_url())
+
+
+def remove_from_watchlist(self):
+    """Remove item from watchlist"""
+    try:
+        Watchlist.objects.get(
+            user=self.request.user,
+            listing=self.object
+        ).delete()
+    except ObjectDoesNotExist:
+        messages.error(self.request, 'Not in watchlist')
+        return redirect(self.get_success_url())
+    messages.success(self.request, 'Removed from watchlist')
     return redirect(self.get_success_url())

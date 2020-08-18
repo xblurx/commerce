@@ -20,18 +20,6 @@ class PlaceBidForm(forms.ModelForm):
         model = Bid
         fields = ('bid_amount',)
 
-    # to refactor
-    # def clean_bid_amount(self):
-    #     bid_amount = self.cleaned_data.get('bid_amount')
-    #     highest_bid = Bid.objects.order_by('-bid_amount').first()
-    #     if not highest_bid:
-    #         return bid_amount
-    #     if bid_amount <= highest_bid.bid_amount:
-    #         raise ValidationError('Your bid is too small!')
-    #     elif bid_amount <= Listing.objects.get(id=self.object).starting_bid:
-    #         raise ValidationError(_('Bid amount must be greater than starting bid!'), code='less_than_start_bid)
-    #     return bid_amount
-
 
 class AddToWatchlistForm(forms.ModelForm):
     class Meta:
